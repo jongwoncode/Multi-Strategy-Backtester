@@ -104,7 +104,6 @@ class Crawler:
             iter += 1
             await asyncio.sleep(1)
 
-
         logger.info(f"CRAWLING END |SYMBOL :{symbol}, ITER : {iter}, DATA LENGTH : {len(candle_list)}")
         # dataframe 정리
         df_response = pd.DataFrame(candle_list, columns=['Open time', 'Open', 'High', 'Low', 'Close', 'Volume', 'Close time', 'Quote asset volume', 'Number of trades', 'Taker buy base asset volume', 'Taker buy quote asset volume', 'Ignore'])
@@ -117,32 +116,33 @@ class Crawler:
 
 
 async def main(startTime):
-    cralwer_btc = Crawler()
-    cralwer_eth = Crawler()
-    for interval in ['15m', '3m','1h', '4h', '1D']:
-        await asyncio.gather(
-            cralwer_btc.get_coin_candle_all(url=Endpoints.BINANCE_FUTURES_CANDLESTICK_API.value, 
-                                                    symbol='BTCUSDT', 
-                                                    interval=interval,
-                                                    startTime=startTime, 
-                                                    limit=1500,
-                                                    save=True,
-                                                    save_path=f'./crypto/{interval}/btc.csv'),
+    cralwer = Crawler()
+    interval = '15m'
+    
+    # 수집할 코인의 symbol 리스트 수집
+    symbolList = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'SOLUSDT', 'DOGEUSDT', 'AVAXUSDT', 'BCHUSDT']
+    
+    # gather로 비동기 작업 병렬 실행
+    task = [
+        cralwer.get_coin_candle_all(
+            url=Endpoints.BINANCE_FUTURES_CANDLESTICK_API.value
+            , symbol=symbol
+            , interval=interval
+            , startTime=startTime
+            , limit=1500
+            , save=True
+            , save_path=f'./crypto/{interval}/{symbol.lower().replace("usdt", "")}.csv'
+        ) 
+        for symbol in symbolList
+    ]
+    
+    await asyncio.gather(*task)
 
-            cralwer_eth.get_coin_candle_all(url=Endpoints.BINANCE_FUTURES_CANDLESTICK_API.value, 
-                                                    symbol='ETHUSDT', 
-                                                    interval=interval,
-                                                    startTime=startTime, 
-                                                    limit=1500,
-                                                    save=True,
-                                                    save_path=f'./crypto/{interval}/eth.csv'),        
-
-        )
 
 
 if __name__ == '__main__':
 
-    startTime = '2019-01-01'
+    startTime = '2020-01-01'
     asyncio.run(main(startTime))
 
     
